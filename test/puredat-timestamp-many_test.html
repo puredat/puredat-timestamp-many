@@ -1,0 +1,37 @@
+<!doctype html>
+
+<html>
+  <head>
+    <title>puredat-timestamp-many test</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../../paper-input/paper-input.html">
+    <link rel="import" href="../../paper-dialog/paper-dialog.html">
+    <link rel="import" href="../../paper-dialog-scrollable/paper-dialog-scrollable.html">
+    <link rel="import" href="../../paper-button/paper-button.html">
+
+    <link rel="import" href="../puredat-timestamp-many.html">
+  </head>
+  <body>
+
+    <test-fixture id="basic">
+      <template>
+        <puredat-timestamp-many></puredat-timestamp-many>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('puredat-timestamp-many', function() {
+
+        test('instantiating the element works', function() {
+          var element = fixture('basic');
+          assert.equal(element.is, 'puredat-timestamp-many');
+        });
+
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,211 @@
+<link rel="import" href="bower_components/polymer/polymer.html">
+<link rel="import" href="bower_components/puredat-timestamp/puredat-timestamp.html">
+<link rel="import" href="bower_components/puredat-paper-input-autocomplete-chips/paper-input-autocomplete-chips.html">
+<!--
+	`puredat-timestamp-many` "STRING" type, "MANY" cardinality widget.
+	
+	@demo demo/index.html 
+-->
+<dom-module id="puredat-timestamp-many">
+	<template>
+		<style>
+			paper-input-autocomplete-chips {
+				float:left;
+				--paper-input-container: {
+					padding-right: 10px;
+				}
+			}
+
+			puredat-timestamp{
+				--paper-input-container: {
+					display: none;
+				}
+			}
+
+			iron-icon {
+				float: left;
+				margin-top: 20px;
+			}
+
+			puredat-timestamp {
+				clear:both;
+			}
+		</style>
+
+		<paper-input-autocomplete-chips
+						tabindex="-1"
+						no-chip-image
+						no-label-float
+						type="text"
+						maxlength="[[maxLength]]"
+						max-selected-items="100"
+						label="[[label]]"
+						readonly$="[[readOnly]]"
+						error-message="[[errorMessage]]"
+						invalid="[[_isInvalid(errorMessage)]]"
+						allowed-pattern="[[pattern]]"
+						allow-select-unknown-token
+						on-selected-objects-changed="_selectedChanged"
+						data-lng$="{{item}}">
+		</paper-input-autocomplete-chips>
+		<paper-icon-button 
+			icon="event"
+			disabled$="[[readOnly]]"
+			on-click="_openDateTimePicker"></paper-icon-button>
+		<puredat-timestamp store-date-format="[[storeDateFormat]]" store-timezone="[[storeTimezone]]" value="{{activeValue}}"></puredat-timestamp>
+	</template>
+	
+	<script>
+		Polymer({
+			is: 'puredat-timestamp-many',
+			
+			properties: {
+		        /** Name. */
+				name: {
+					type: String
+				},
+				
+				/** Descriptive label. */
+				label: {
+					type: String
+				},
+				
+				/** Value. */
+				value: {
+					type: Array,
+					observer: '_valueChanged',
+					value: function(){
+						return [];
+					}
+				},
+				
+				/** Error message. */
+				errorMessage: {
+					type: String
+				},
+				
+				/** Number of columns in a row of 10 columns. */
+				cols: {
+					type: Number,
+					value: 5
+				},
+				
+				/** Read only. */
+				readOnly: {
+					type: Boolean,
+					value: false
+				},
+
+				/** Allowed pattern. For example: [a-zA-Z]. */
+				pattern: {
+					type: String
+				},
+
+				storeDateFormat: {
+					type: String,
+					value: "YYYY-MM-DD HH:mm:ss.SSSZZ"
+				},
+
+				displayDateFormat: {
+					type: String,
+					value: "DD/MM/YYYY HH:mm:ss.SSSZZ"
+				},
+
+				dateTimePicker: {
+					type: Object,
+					value: function(){
+						return {};
+					}
+				},
+
+				activeValue: {
+					type: String,
+					observer: '_activeValueChanged'
+				},
+
+				selecting: {
+					type: Boolean,
+					value: false
+				}
+		    },
+
+		    ready(){
+		    	this.dateTimePicker = this.querySelector("puredat-timestamp");
+		    	this.chipElement = this.querySelector("paper-input-autocomplete-chips");
+		    	this.activeValue = this._getDefaultValue();
+		    },
+
+		    _getDefaultValue: function(){
+		    	var tmp = new Date();
+		    	var year = tmp.getFullYear();
+		    	var month = (tmp.getMonth()+1 < 10 ? "0"+(tmp.getMonth()+1) : tmp.getMonth()+1);
+		    	var day = (tmp.getDate() < 10 ? "0"+tmp.getDate() : tmp.getDate());
+		    	var hours = (tmp.getHours() < 10 ? "0"+tmp.getHours() : tmp.getHours());
+		    	var minutes = (tmp.getMinutes() < 10 ? "0"+tmp.getMinutes() : tmp.getMinutes());
+		    	var seconds = (tmp.getSeconds() < 10 ? "0"+tmp.getSeconds() : tmp.getSeconds());
+
+		    	return year + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds;
+		    },
+
+		     /**
+			 * Returns if the field is valid.
+			 * @param {String} errorMessage The error message.
+			 * @return {Boolean} If the input field is valid.
+			 */
+			_isInvalid: function(errorMessage) {
+				return errorMessage != null
+						&& errorMessage != "";
+			},
+
+			_openDateTimePicker: function(){
+				this.dateTimePicker.$.dialog.toggle();
+			},
+
+			_activeValueChanged: function(value){
+				if(this.selecting) return;
+
+				if(this.chipElement && value){
+					this.selecting = true;
+
+					var newValue = [];
+					this.chipElement.appendSelectedObject({text:value});
+					for(var i = 0;i < this.value.length;i++) newValue.push(this.value[i]);
+					newValue.push(value);
+					this.set("value",newValue);
+					this.activeValue = "";
+
+					this.selecting = false;
+				}
+			},
+
+			_selectedChanged: function(event){
+				if(this.selecting) return;
+
+				if(event.srcElement || event.target){
+					var src = event.srcElement || event.target;
+					if(src.selectedObjects){
+						this.selecting = true;
+						var newValue = [];
+						for(var i = 0;i < src.selectedObjects.length;i++){
+							newValue.push(src.selectedObjects[i].text);
+						}
+						this.set("value",newValue);
+						this.selecting = false;
+					}
+				}
+			},
+
+			_valueChanged: function(value){
+				if(this.selecting) return;
+
+				if(value && value.length > 0 && this.chipElement){
+					this.selecting = true;
+					this.chipElement.selectedObjects = [];
+					for(var i = 0;i < value.length;i++) this.chipElement.appendSelectedObject({text:value[i]});
+					this.selecting = false;
+				}
+			}
+
+		});
+	</script>
+</dom-module>

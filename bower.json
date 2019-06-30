@@ -1,0 +1,16 @@
+{
+  "name": "puredat-timestamp-many",
+  "main": "puredat-timestamp-many.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.4.0",
+    "moment": "^2.20.1"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "web-component-tester": "^4.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "puredat-timestamp": "puredat/puredat-timestamp",
+    "puredat-paper-input-autocomplete-chips": "puredat/puredat-paper-input-autocomplete-chips"
+  }
+}
