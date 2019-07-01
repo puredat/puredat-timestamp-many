@@ -1,7 +1,8 @@
-<link rel="import" href="bower_components/polymer/polymer.html">
-<link rel="import" href="bower_components/puredat-paper-input-autocomplete-chips/paper-input-autocomplete-chips.html">
-<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
-<link rel="import" href="bower_components/puredat-timestamp/puredat-timestamp.html">
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../puredat-paper-input-autocomplete-chips/paper-input-autocomplete-chips.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../puredat-timestamp/puredat-timestamp.html">
+<script src="../moment/moment.js"></script>
 
 <!--
 	`puredat-timestamp-many` "STRING" type, "MANY" cardinality widget.
@@ -179,8 +180,8 @@
 				if(this.chipElement && value){
 					this.selecting = true;
 					var newValue = [];
-					for(var i = 0;i < this.values.length;i++) newValue.push(this.values[i]);
-					newValue.push(value);
+					for(var i = 0;i < this.values.length;i++) newValue.push(this.values[i].trim());
+					newValue.push(value.trim());
 					this._setValues(newValue);
 					this.activeValue = "";
 					this.selecting = false;
@@ -197,7 +198,7 @@
 						var newValue = [];
 						for(var i = 0;i < src.selectedObjects.length;i++){
 							var dateToStore = moment(src.selectedObjects[i].text,this.displayDateFormat).utc().utcOffset(this.storeTimezone).format(this.storeDateFormat).substring(0,this.maxlength);
-							newValue.push(dateToStore);
+							newValue.push(dateToStore.trim());
 						}
 						this._setValues(newValue);
 						this.selecting = false;
