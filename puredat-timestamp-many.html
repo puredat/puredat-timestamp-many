@@ -1,0 +1,258 @@
+<link rel="import" href="bower_components/polymer/polymer.html">
+<link rel="import" href="bower_components/puredat-paper-input-autocomplete-chips/paper-input-autocomplete-chips.html">
+<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="bower_components/puredat-timestamp/puredat-timestamp.html">
+
+<!--
+	`puredat-timestamp-many` "STRING" type, "MANY" cardinality widget.
+	
+	@demo demo/index.html 
+-->
+<dom-module id="puredat-timestamp-many">
+	<template>
+		<style>
+			paper-input-autocomplete-chips {
+				float:left;
+				--paper-input-container: {
+					padding-right: 10px;
+				}
+			}
+
+			puredat-timestamp{
+				--paper-input-container: {
+					display: none;
+				}
+			}
+
+			iron-icon {
+				float: left;
+				margin-top: 20px;
+			}
+
+			puredat-timestamp {
+				clear:both;
+			}
+		</style>
+
+		<paper-input-autocomplete-chips
+						tabindex="-1"
+						no-chip-image
+						no-label-float
+						type="text"
+						minlength="[[minlength]]"
+						maxlength="[[maxlength]]"
+						max-selected-items="100"
+						label="[[label]]"
+						readonly$="[[readOnly]]"
+						error-message="[[errorMessage]]"
+						invalid="[[_isInvalid(errorMessage)]]"
+						allowed-pattern="[[pattern]]"
+						allow-select-unknown-token
+						on-selected-objects-changed="_selectedChanged"
+						data-lng$="{{item}}">
+		</paper-input-autocomplete-chips>
+		<paper-icon-button 
+			icon="event"
+			disabled$="[[readOnly]]"
+			on-click="_openDateTimePicker"></paper-icon-button>
+		<puredat-timestamp store-date-format="[[storeDateFormat]]" store-timezone="[[storeTimezone]]" display-dateformat="[[displayDateFormat]]" display-timezone="[[displayTimezone]]" value="{{activeValue}}"></puredat-timestamp>
+	</template>
+	
+	<script>
+		Polymer({
+			is: 'puredat-timestamp-many',
+			
+			properties: {
+		        /** Name. */
+				name: {
+					type: String
+				},
+				
+				/** Descriptive label. */
+				label: {
+					type: String
+				},
+				
+				/** Value. */
+				values: {
+					type: Array,
+					observer: '_valueChanged',
+					value: function(){
+						return [];
+					}
+				},
+				
+				/** Error message. */
+				errorMessage: {
+					type: String
+				},
+				
+				/** Number of columns in a row of 10 columns. */
+				cols: {
+					type: Number,
+					value: 5
+				},
+				
+				/** Read only. */
+				readOnly: {
+					type: Boolean,
+					value: false
+				},
+
+				minlength: {
+		          type: Number,
+		          value: 19
+		        },
+
+		        maxlength: {
+		          type: Number,
+		          value: 26
+		        },
+
+				pattern: {
+		          type: String,
+		          value: "^$|[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{3})(\\+[0-9]{2})*"
+		        },
+
+				storeDateFormat: {
+		          type: String,
+		          value: "YYYY-MM-DD HH:mm:ss.SSSZZ"
+		        },
+
+		        displayDateFormat: {
+		          type: String,
+		          value: "DD/MM/YYYY HH:mm:ss.SSSZZ",
+		          observer: '_displayDateFormatChanged'
+		        },
+
+				storeTimezone: {
+		          type: String,
+		          value: "+00:00"
+		        },
+
+		        displayTimezone: {
+		          type: String,
+		          value: "+01:00",
+		          observer: '_displayTimezoneChanged'
+		        },
+
+				dateTimePicker: {
+					type: Object,
+					value: function(){
+						return {};
+					}
+				},
+
+				activeValue: {
+					type: String,
+					observer: '_activeValueChanged'
+				},
+
+				selecting: {
+					type: Boolean,
+					value: false
+				}
+		    },
+
+		    ready(){
+		    	this.dateTimePicker = this.querySelector("puredat-timestamp");
+		    	this.chipElement = this.querySelector("paper-input-autocomplete-chips");
+		    },
+
+		     /**
+			 * Returns if the field is valid.
+			 * @param {String} errorMessage The error message.
+			 * @return {Boolean} If the input field is valid.
+			 */
+			_isInvalid: function(errorMessage) {
+				return errorMessage != null
+						&& errorMessage != "";
+			},
+
+			_openDateTimePicker: function(){
+				this.dateTimePicker.$.dialog.toggle();
+			},
+
+			_activeValueChanged: function(value){
+				if(this.selecting) return;
+
+				if(this.chipElement && value){
+					this.selecting = true;
+					var newValue = [];
+					for(var i = 0;i < this.values.length;i++) newValue.push(this.values[i]);
+					newValue.push(value);
+					this._setValues(newValue);
+					this.activeValue = "";
+					this.selecting = false;
+				}
+			},
+
+			_selectedChanged: function(event){
+				if(this.selecting) return;
+
+				if((event.srcElement || event.target) && this.chipElement){
+					var src = event.srcElement || event.target;
+					if(src && src.selectedObjects){
+						this.selecting = true;
+						var newValue = [];
+						for(var i = 0;i < src.selectedObjects.length;i++){
+							var dateToStore = moment(src.selectedObjects[i].text,this.displayDateFormat).utc().utcOffset(this.storeTimezone).format(this.storeDateFormat).substring(0,this.maxlength);
+							newValue.push(dateToStore);
+						}
+						this._setValues(newValue);
+						this.selecting = false;
+					}
+				}
+			},
+
+			_valueChanged: function(value){
+				if(this.selecting) return;
+
+				if(value && value.length > 0 && this.chipElement){
+					this.selecting = true;
+					this._setValues(value);
+					this.selecting = false;
+				}
+			},
+
+			_displayDateFormatChanged: function(newDisplayDateFormar) {
+		      	if(newDisplayDateFormar != null && this.values != null && this.values.length > 0) {
+		      		this.selecting = true;
+		      		this.chipElement.selectedObjects = [];
+		      		for(var i = 0;i < this.values.length;i++){
+		      			this._formatValue(this.values[i]);
+		      		}
+		          	this.selecting = false;
+		      	}
+		      },
+
+		    _displayTimezoneChanged: function(newDisplayTimeZone) {
+		      	if(newDisplayTimeZone != null && this.values != null && this.values.length > 0) {
+		      		this.selecting = true;
+		      		this.chipElement.selectedObjects = [];
+		      		for(var i = 0;i < this.values.length;i++){
+		      			this._formatValue(this.values[i]);
+		      		}
+		          	this.selecting = false;
+		      	}
+		    },
+
+			_formatValue: function(value){
+          		var dateToDisplay = moment(value,this.storeDateFormat).utc().utcOffset(this.displayTimezone).format(this.displayDateFormat).substring(0,this.maxlength);
+          		this.chipElement.appendSelectedObject({text:dateToDisplay});
+			},
+
+			_setValues: function(value){
+				this.chipElement.selectedObjects = [];
+				var reg = new RegExp(this.pattern, 'g');
+				var errors = false;
+				for(var i = 0;i < value.length;i++){
+					if(!reg.test(value[i])) errors = true;
+					this._formatValue(value[i]);
+				}
+				this.hasErrors = errors;
+				this.set("values",value);
+			}
+		});
+	</script>
+</dom-module>
