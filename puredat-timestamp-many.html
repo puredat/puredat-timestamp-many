@@ -75,7 +75,7 @@
 				},
 				
 				/** Value. */
-				values: {
+				value: {
 					type: Array,
 					observer: '_valueChanged',
 					value: function(){
@@ -180,7 +180,7 @@
 				if(this.chipElement && value){
 					this.selecting = true;
 					var newValue = [];
-					for(var i = 0;i < this.values.length;i++) newValue.push(this.values[i].trim());
+					for(var i = 0;i < this.value.length;i++) newValue.push(this.value[i].trim());
 					newValue.push(value.trim());
 					this._setValues(newValue);
 					this.activeValue = "";
@@ -217,22 +217,22 @@
 			},
 
 			_displayDateFormatChanged: function(newDisplayDateFormar) {
-		      	if(newDisplayDateFormar != null && this.values != null && this.values.length > 0) {
+		      	if(newDisplayDateFormar != null && this.value != null && this.value.length > 0) {
 		      		this.selecting = true;
 		      		this.chipElement.selectedObjects = [];
-		      		for(var i = 0;i < this.values.length;i++){
-		      			this._formatValue(this.values[i]);
+		      		for(var i = 0;i < this.value.length;i++){
+		      			this._formatValue(this.value[i]);
 		      		}
 		          	this.selecting = false;
 		      	}
 		      },
 
 		    _displayTimezoneChanged: function(newDisplayTimeZone) {
-		      	if(newDisplayTimeZone != null && this.values != null && this.values.length > 0) {
+		      	if(newDisplayTimeZone != null && this.value != null && this.value.length > 0) {
 		      		this.selecting = true;
 		      		this.chipElement.selectedObjects = [];
-		      		for(var i = 0;i < this.values.length;i++){
-		      			this._formatValue(this.values[i]);
+		      		for(var i = 0;i < this.value.length;i++){
+		      			this._formatValue(this.value[i]);
 		      		}
 		          	this.selecting = false;
 		      	}
@@ -244,15 +244,17 @@
 			},
 
 			_setValues: function(value){
+				var tmpValue = JSON.parse(JSON.stringify(value));
 				this.chipElement.selectedObjects = [];
 				var reg = new RegExp(this.pattern, 'g');
 				var errors = false;
-				for(var i = 0;i < value.length;i++){
-					if(!reg.test(value[i])) errors = true;
-					this._formatValue(value[i]);
+				for(var i = 0;i < tmpValue.length;i++){
+					if(!reg.test(tmpValue[i])) errors = true;
+					this._formatValue(tmpValue[i]);
 				}
-				if(errors) this.errorMessage = "Valor inválido";
-				this.set("values",value);
+				//if(errors) this.errorMessage = "Valor inválido";
+				this.splice("value", 0, this.value.length);
+				for(var i = 0;i < tmpValue.length;i++) this.push("value", tmpValue[i]);
 			}
 		});
 	</script>
