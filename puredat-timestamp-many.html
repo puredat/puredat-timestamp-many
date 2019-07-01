@@ -1,6 +1,8 @@
 <link rel="import" href="bower_components/polymer/polymer.html">
-<link rel="import" href="bower_components/puredat-timestamp/puredat-timestamp.html">
 <link rel="import" href="bower_components/puredat-paper-input-autocomplete-chips/paper-input-autocomplete-chips.html">
+<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="bower_components/puredat-timestamp/puredat-timestamp.html">
+
 <!--
 	`puredat-timestamp-many` "STRING" type, "MANY" cardinality widget.
 	
@@ -37,7 +39,8 @@
 						no-chip-image
 						no-label-float
 						type="text"
-						maxlength="[[maxLength]]"
+						minlength="[[minlength]]"
+						maxlength="[[maxlength]]"
 						max-selected-items="100"
 						label="[[label]]"
 						readonly$="[[readOnly]]"
@@ -52,7 +55,7 @@
 			icon="event"
 			disabled$="[[readOnly]]"
 			on-click="_openDateTimePicker"></paper-icon-button>
-		<puredat-timestamp store-date-format="[[storeDateFormat]]" store-timezone="[[storeTimezone]]" value="{{activeValue}}"></puredat-timestamp>
+		<puredat-timestamp store-date-format="[[storeDateFormat]]" store-timezone="[[storeTimezone]]" display-dateformat="[[displayDateFormat]]" display-timezone="[[displayTimezone]]" value="{{activeValue}}"></puredat-timestamp>
 	</template>
 	
 	<script>
@@ -71,7 +74,7 @@
 				},
 				
 				/** Value. */
-				value: {
+				values: {
 					type: Array,
 					observer: '_valueChanged',
 					value: function(){
@@ -96,20 +99,42 @@
 					value: false
 				},
 
-				/** Allowed pattern. For example: [a-zA-Z]. */
+				minlength: {
+		          type: Number,
+		          value: 19
+		        },
+
+		        maxlength: {
+		          type: Number,
+		          value: 26
+		        },
+
 				pattern: {
-					type: String
-				},
+		          type: String,
+		          value: "^$|[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{3})(\\+[0-9]{2})*"
+		        },
 
 				storeDateFormat: {
-					type: String,
-					value: "YYYY-MM-DD HH:mm:ss.SSSZZ"
-				},
+		          type: String,
+		          value: "YYYY-MM-DD HH:mm:ss.SSSZZ"
+		        },
 
-				displayDateFormat: {
-					type: String,
-					value: "DD/MM/YYYY HH:mm:ss.SSSZZ"
-				},
+		        displayDateFormat: {
+		          type: String,
+		          value: "DD/MM/YYYY HH:mm:ss.SSSZZ",
+		          observer: '_displayDateFormatChanged'
+		        },
+
+				storeTimezone: {
+		          type: String,
+		          value: "+00:00"
+		        },
+
+		        displayTimezone: {
+		          type: String,
+		          value: "+01:00",
+		          observer: '_displayTimezoneChanged'
+		        },
 
 				dateTimePicker: {
 					type: Object,
@@ -132,19 +157,6 @@
 		    ready(){
 		    	this.dateTimePicker = this.querySelector("puredat-timestamp");
 		    	this.chipElement = this.querySelector("paper-input-autocomplete-chips");
-		    	this.activeValue = this._getDefaultValue();
-		    },
-
-		    _getDefaultValue: function(){
-		    	var tmp = new Date();
-		    	var year = tmp.getFullYear();
-		    	var month = (tmp.getMonth()+1 < 10 ? "0"+(tmp.getMonth()+1) : tmp.getMonth()+1);
-		    	var day = (tmp.getDate() < 10 ? "0"+tmp.getDate() : tmp.getDate());
-		    	var hours = (tmp.getHours() < 10 ? "0"+tmp.getHours() : tmp.getHours());
-		    	var minutes = (tmp.getMinutes() < 10 ? "0"+tmp.getMinutes() : tmp.getMinutes());
-		    	var seconds = (tmp.getSeconds() < 10 ? "0"+tmp.getSeconds() : tmp.getSeconds());
-
-		    	return year + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds;
 		    },
 
 		     /**
@@ -166,14 +178,11 @@
 
 				if(this.chipElement && value){
 					this.selecting = true;
-
 					var newValue = [];
-					this.chipElement.appendSelectedObject({text:value});
-					for(var i = 0;i < this.value.length;i++) newValue.push(this.value[i]);
+					for(var i = 0;i < this.values.length;i++) newValue.push(this.values[i]);
 					newValue.push(value);
-					this.set("value",newValue);
+					this._setValues(newValue);
 					this.activeValue = "";
-
 					this.selecting = false;
 				}
 			},
@@ -181,15 +190,16 @@
 			_selectedChanged: function(event){
 				if(this.selecting) return;
 
-				if(event.srcElement || event.target){
+				if((event.srcElement || event.target) && this.chipElement){
 					var src = event.srcElement || event.target;
-					if(src.selectedObjects){
+					if(src && src.selectedObjects){
 						this.selecting = true;
 						var newValue = [];
 						for(var i = 0;i < src.selectedObjects.length;i++){
-							newValue.push(src.selectedObjects[i].text);
+							var dateToStore = moment(src.selectedObjects[i].text,this.displayDateFormat).utc().utcOffset(this.storeTimezone).format(this.storeDateFormat).substring(0,this.maxlength);
+							newValue.push(dateToStore);
 						}
-						this.set("value",newValue);
+						this._setValues(newValue);
 						this.selecting = false;
 					}
 				}
@@ -200,12 +210,49 @@
 
 				if(value && value.length > 0 && this.chipElement){
 					this.selecting = true;
-					this.chipElement.selectedObjects = [];
-					for(var i = 0;i < value.length;i++) this.chipElement.appendSelectedObject({text:value[i]});
+					this._setValues(value);
 					this.selecting = false;
 				}
-			}
+			},
 
+			_displayDateFormatChanged: function(newDisplayDateFormar) {
+		      	if(newDisplayDateFormar != null && this.values != null && this.values.length > 0) {
+		      		this.selecting = true;
+		      		this.chipElement.selectedObjects = [];
+		      		for(var i = 0;i < this.values.length;i++){
+		      			this._formatValue(this.values[i]);
+		      		}
+		          	this.selecting = false;
+		      	}
+		      },
+
+		    _displayTimezoneChanged: function(newDisplayTimeZone) {
+		      	if(newDisplayTimeZone != null && this.values != null && this.values.length > 0) {
+		      		this.selecting = true;
+		      		this.chipElement.selectedObjects = [];
+		      		for(var i = 0;i < this.values.length;i++){
+		      			this._formatValue(this.values[i]);
+		      		}
+		          	this.selecting = false;
+		      	}
+		    },
+
+			_formatValue: function(value){
+          		var dateToDisplay = moment(value,this.storeDateFormat).utc().utcOffset(this.displayTimezone).format(this.displayDateFormat).substring(0,this.maxlength);
+          		this.chipElement.appendSelectedObject({text:dateToDisplay});
+			},
+
+			_setValues: function(value){
+				this.chipElement.selectedObjects = [];
+				var reg = new RegExp(this.pattern, 'g');
+				var errors = false;
+				for(var i = 0;i < value.length;i++){
+					if(!reg.test(value[i])) errors = true;
+					this._formatValue(value[i]);
+				}
+				this.hasErrors = errors;
+				this.set("values",value);
+			}
 		});
 	</script>
 </dom-module>
