@@ -250,7 +250,7 @@
 					if(!reg.test(value[i])) errors = true;
 					this._formatValue(value[i]);
 				}
-				this.hasErrors = errors;
+				if(errors) this.errorMessage = "Valor inválido";
 				this.set("values",value);
 			}
 		});
