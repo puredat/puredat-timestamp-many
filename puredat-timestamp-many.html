@@ -211,9 +211,9 @@
 			_valueChanged: function(value){
 				if(this.selecting) return;
 
-				if(value && value.length > 0 && this.chipElement){
+				if(this.chipElement){
 					this.selecting = true;
-					this._setValues(value);
+					this._setValues(value || []);
 					this.selecting = false;
 				}
 			},
@@ -246,6 +246,7 @@
 			},
 
 			_setValues: function(value){
+				if(!this.value) this.value = [];
 				var tmpValue = JSON.parse(JSON.stringify(value));
 				this.chipElement.selectedObjects = [];
 				var reg = new RegExp(this.pattern, 'g');
